@@ -177,10 +177,17 @@
 # 2017-01-03 Created check_config function to list all obvious config issues (2.02)
 # 2017-01-10 force renew if FORCE_RENEWAL file exists (2.03)
 # 2017-01-12 added drill, dig or host as alternatives to nslookup (2.04)
+# 2017-01-18 bugfix issue #227 - error deleting csr if doesn't exist
+# 2017-01-18 issue #228 check private key and account key are different (2.05)
+# 2017-01-21 issue #231 mingw bugfix and typos in debug messages (2.06)
+# 2017-01-29 issue #232 use neutral locale for date formatting (2.07)
+# 2017-01-30 issue #243 compatibility with bash 3.0 (2.08)
+# 2017-01-30 issue #243 additional compatibility with bash 3.0 (2.09)
+# 2017-02-18 add OCSP Must-Staple to the domain csr generation (2.10)
 # ----------------------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="2.04"
+VERSION="2.10"
 
 # defaults
 ACCOUNT_KEY_LENGTH=4096
@@ -212,6 +219,7 @@ REUSE_PRIVATE_KEY="true"
 SERVER_TYPE="https"
 SKIP_HTTP_TOKEN_CHECK="false"
 SSLCONF="$(openssl version -d 2>/dev/null| cut -d\" -f2)/openssl.cnf"
+OCSP_MUST_STAPLE="false"
 TEMP_UPGRADE_FILE=""
 TOKEN_USER_ID=""
 USE_SINGLE_ACL="false"
@@ -229,6 +237,7 @@ _UPGRADE=0
 _UPGRADE_CHECK=1
 _USE_DEBUG=0
 config_errors="false"
+LANG=C
 
 # store copy of original command in case of upgrading script and re-running
 ORIGCMD="$0 $*"
@@ -312,14 +321,24 @@ check_config() { # check the config files for all obvious errors
   debug "checking config"
 
   # check keys
-  if [[ ! "$ACCOUNT_KEY_TYPE" =~ ^(rsa|prime256v1|secp384r1|secp521r1)$ ]]; then
-    info "${DOMAIN}: invalid ACCOUNT_KEY_TYPE"
+  case "$ACCOUNT_KEY_TYPE" in
+    rsa|prime256v1|secp384r1|secp521r1)
+      debug "checked ACCOUNT_KEY_TYPE " ;;
+    *)
+      info "${DOMAIN}: invalid ACCOUNT_KEY_TYPE - $ACCOUNT_KEY_TYPE"
+      config_errors=true ;;
+  esac
+  if [[ "$ACCOUNT_KEY" == "$DOMAIN_DIR/${DOMAIN}.key" ]]; then
+    info "${DOMAIN}: ACCOUNT_KEY and domain key ( $DOMAIN_DIR/${DOMAIN}.key ) must be different"
     config_errors=true
   fi
-  if [[ ! "$PRIVATE_KEY_ALG" =~ ^(rsa|prime256v1|secp384r1|secp521r1)$ ]]; then
-    info "${DOMAIN}: invalid PRIVATE_KEY_ALG"
-    config_errors=true
-  fi
+  case "$PRIVATE_KEY_ALG" in
+    rsa|prime256v1|secp384r1|secp521r1)
+      debug "checked PRIVATE_KEY_ALG " ;;
+    *)
+      info "${DOMAIN}: invalid PRIVATE_KEY_ALG - $PRIVATE_KEY_ALG"
+      config_errors=true ;;
+  esac
   if [[ "$DUAL_RSA_ECDSA" == "true" ]] && [[ "$PRIVATE_KEY_ALG" == "rsa" ]]; then
     info "${DOMAIN}: PRIVATE_KEY_ALG not set to an EC type and DUAL_RSA_ECDSA=\"true\""
     config_errors=true
@@ -437,7 +456,7 @@ check_getssl_upgrade() { # check if a more recent version of code is available a
         declare -a getssl_versions
         shopt -s nullglob
         for getssl_version in $0.v*; do
-          getssl_versions+=($getssl_version)
+          getssl_versions[${#getssl_versions[@]}]="$getssl_version"
         done
         shopt -u nullglob
         # Explicitly sort the getssl_versions array to make sure
@@ -603,6 +622,11 @@ create_csr() { # create a csr using a given key (if it doesn't already exist)
     tmp_conf=$(mktemp)
     cat "$SSLCONF" > "$tmp_conf"
     printf "[SAN]\n%s" "$SANLIST" >> "$tmp_conf"
+    # add OCSP Must-Staple to the domain csr
+    # if openssl version >= 1.1.0 one can also use "tlsfeature = status_request"
+    if [[ "$OCSP_MUST_STAPLE" == "true" ]]; then
+      printf "\n1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05" >> "$tmp_conf"
+    fi
     openssl req -new -sha256 -key "$csr_key" -subj "$CSR_SUBJECT" -reqexts SAN -config "$tmp_conf" > "$csr_file"
     rm -f "$tmp_conf"
   fi
@@ -612,13 +636,13 @@ create_key() { # create a domain key (if it doesn't already exist)
   key_type=$1 # domain key type
   key_loc=$2  # domain key location
   key_len=$3  # domain key length - for rsa keys.
-  # check if domain key exists, if not then create it.
+  # check if key exists, if not then create it.
   if [[ -s "$key_loc" ]]; then
     debug "domain key exists at $key_loc - skipping generation"
     # ideally need to check validity of domain key
   else
     umask 077
-    info "creating domain key - $key_loc"
+    info "creating key - $key_loc"
     case "$key_type" in
       rsa)
         openssl genrsa "$key_len" > "$key_loc";;
@@ -629,7 +653,9 @@ create_key() { # create a domain key (if it doesn't already exist)
     esac
     umask "$ORIG_UMASK"
     # remove csr on generation of new domain key
-    rm -f "${key_loc::-4}.csr"
+    if [[ -e "${key_loc::-4}.csr" ]]; then
+      rm -f "${key_loc::-4}.csr"
+    fi
   fi
 }
 
@@ -835,7 +861,7 @@ get_os() { # function to get the current Operating System
     os="mac"
   elif [[ ${uname_res:0:6} == "CYGWIN" ]]; then
     os="cygwin"
-  elif [[ ${uname_res:0:6} == "MINGW" ]]; then
+  elif [[ ${uname_res:0:5} == "MINGW" ]]; then
     os="mingw"
   else
     os="unknown"
@@ -1137,9 +1163,9 @@ send_signed_request() { # Sends a request to the ACME server, signed with your p
 
   # Send header + extended header + payload + signature to the acme-server
   body="{\"header\": ${header},"
-  body+="\"protected\": \"${protected64}\","
-  body+="\"payload\": \"${payload64}\","
-  body+="\"signature\": \"${signed64}\"}"
+  body="${body}\"protected\": \"${protected64}\","
+  body="${body}\"payload\": \"${payload64}\","
+  body="${body}\"signature\": \"${signed64}\"}"
   debug "header, payload and signature = $body"
 
   code="500"
@@ -1409,6 +1435,11 @@ done
 # Get the current OS, so the correct functions can be used for that OS. (sets the variable os)
 get_os
 
+# check if "recent" version of bash.
+#if [[ "${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}" -lt 42 ]]; then
+#  info "this script is designed for bash v4.2 or later - earlier version may give errors"
+#fi
+
 #check if required applications are included
 
 requires which
@@ -1472,6 +1503,9 @@ DOMAIN_DIR="$DOMAIN_STORAGE/$DOMAIN"
 CERT_FILE="$DOMAIN_DIR/${DOMAIN}.crt"
 CA_CERT="$DOMAIN_DIR/chain.crt"
 TEMP_DIR="$DOMAIN_DIR/tmp"
+if [[ "$os" == "mingw" ]]; then
+  CSR_SUBJECT="//"
+fi
 
 # Set the OPENSSL_CONF environment variable so openssl knows which config to use
 export OPENSSL_CONF=$SSLCONF
@@ -1689,8 +1723,8 @@ fi
 # end of .... if there is an existing certificate file, check details.
 
 if [[ ! -t 0 ]] && [[ "$PREVENT_NON_INTERACTIVE_RENEWAL" = "true" ]]; then
-  errmsg="$DOMAIN due for renewal, "
-  errmsg+="but not completed due to PREVENT_NON_INTERACTIVE_RENEWAL=true in config"
+  errmsg="$DOMAIN due for renewal,"
+  errmsg="${errmsg} but not completed due to PREVENT_NON_INTERACTIVE_RENEWAL=true in config"
   error_exit "$errmsg"
 fi
 
