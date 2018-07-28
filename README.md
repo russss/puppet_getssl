@@ -15,13 +15,12 @@
 
 ## Module description
 
-This Module uses srvrco's getssl bash script to obtain SSL-Certificates.
+This Module uses srvrco's getssl bash script to obtain SSL certificates.
 The certificates can be used for various protocols like https, smtps, ldaps and so on.
-To get more information about srvrco's getssl script go to his site.
-[getssl](https://github.com/srvrco/getssl)
+For more information about the getssl script, [visit its site](https://github.com/srvrco/getssl)
 
-You can use this module only to install getssl script and configure it by yourself or
-configure all SSL relevant parameters and let this module obtain SSL certificates for you.
+You can use this module to just install getssl script and configure it by yourself, or
+you can configure all relevant parameters and let this module obtain SSL certificates for you.
 
 ## Setup
 
@@ -29,13 +28,13 @@ configure all SSL relevant parameters and let this module obtain SSL certificate
 
 This module creates folders and files under the base directory
 
-* The base directory is `/opt/getssl/`
+* The base directory is `/opt/getssl/` unless overridden with the `base_dir` parameter
 * For each domain it creates new sub directory `$base_dir/example.com/`
 
 ### Setup Requirements
 
 If you want to use this module you have to install `curl`.
-If you don't want to install curl manually you can install it with this module.
+If you don't want to install curl manually you can install it with this module by setting the `manage_packages` parameter to true.
 
 ### Beginning with getssl
 
@@ -50,29 +49,29 @@ class { 'getssl': }
 ### Configuring global configuration file
 
 `getssl` is modular so you can set global configuration parameters
-and the local parameters will overwrite the global ones.
-To configure the global configuration parameters the following code is can be
-used to ensure a minimal configuration.
+and the local per-domain parameters will overwrite the global ones.
+To configure the global configuration parameters the following code is sufficient
+for a minimal configuration.
 
 ``` puppet
 class { 'getssl':
-  account_mail    => 'foo@bar.com',
-  production      => true,
+  account_mail    => 'foo@example.com',
   manage_packages => true,
 }
 ```
 ### Configure domain specific parameters
 
-To obtain a certificate for your domain use the defined function.
-Following example is for nginx. But you can yous your favorite webserver
-e.g apache2 or lighttp.
+To obtain a certificate for your domain use the domain class.
+The following example is for Apache 2, but you can easily amend the configuration for your favourite webserver
+e.g. nginx or lighttp.
 
 ``` puppet
   getssl::domain { 'example.com':
-    acl                  => ['/var/nginx/default],
+    acl                  => ['/usr/local/www/example.com/htdocs/.well-known/acme-challenge],
     sub_domains          => ['www.example.com', 'foo.example.com', 'bar.example.com'],
     domain_check_remote  => true,
     production           => true,
+    domain_reload_command => 'systemctl restart apache2',
   }
 ```
 
@@ -88,21 +87,22 @@ This example tries to get a certificate for:
 This class is used to install getssl on your server and configure the global parameters.
 
 ``` puppet
-  class{ 'getssl': }
+  class { 'getssl': }
 ```
 **Description of parameters can be found in the appropriate .pp files**
 
 ### Public defined types
 
-The defined type `getssl::domain` is used to configure domain specific parameters. This type 
+The defined type `getssl::domain` is used to configure domain-specific parameters. This type 
 tries to obtain the certificates from letsencrypt.
 
 **Description of parameters can be found in the appropriate .pp files**
 
 ## Limitations
 
-This module ist testet on Debian 8 Stable. Can test it under a different version or OS please
-make an issue to disscuse.
+This module has been tested on Debian 8 and 9 stable.
+If you have tested it successfully with other versions or OS, please create an issue to discuss.
+If changes were needed to support your OS, please submit a pull request.
 
 > **Note**: There are some limitations to obtain SSL certificates by LetsEncrypt themselves.
 Please also read the documentation of LetsEncrypt. 
@@ -111,9 +111,9 @@ Please also read the documentation of LetsEncrypt.
 ## Development
 
 If you want to make improvements open a issue or make a pull request.
-I will add few tests to this module but i am new to this so it will take time.
+I will add few tests to this module but I am new to this so it will take time.
 
 ## Appendix
 
-A big thanks to srvrco for his perfect bash written shell script. Thank you!
+Big thanks to Daniel Thielking, the original author of this module, and to srvrco for his perfect bash written shell script. Thank you!
 Thanks to the community of LetsEncrypt.
