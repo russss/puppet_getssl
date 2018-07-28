@@ -1,22 +1,18 @@
 {
-  "name": "thielking/getssl",
-  "version": "0.0.5",
-  "author": "Daniel Thielking",
-  "summary": "Uses getssl shell script from srvrco to get LetsEncrypt-Certificates",
-  "license": "Apache-2.0",
-  "source": "https://github.com/dthielking/puppet_getssl",
-  "project_page": "https://github.com/dthielking/puppet_getssl",
-  "issues_url": "https://github.com/dthielking/puppet_getssl/issues",
-  "tags": ["getssl", "letsencrypt", "https", "ssl", "certificates"],
-  "dependencies": [
-    {"name":"puppetlabs-stdlib","version_requirement":">= 4.0.0"}
-  ],
-  "operatingsystem_support": [
-  {
-  "operatingsystem": "Debian",
-  "operatingsystemrelease": ["8"]
-  }
-  ],
-  "data_provider": null
-}
+    "name": "davidc/getssl",
+    "version": "0.0.6-unreleased",
+    "author": "Daniel Thielking, David Croft",
+    "summary": "Automates Let's Encrypt certificates using getssl from srvrco",
+    "license": "Apache-2.0",
+    "source": "https://github.com/davidc/puppet_getssl",
+    "project_page": "https://github.com/davidc/puppet_getssl",
+    "issues_url": "https://github.com/davidc/puppet_getssl/issues",
+    "tags": ["getssl", "letsencrypt", "https", "ssl", "certificates", "tls"],
+    "dependencies": [
+	{"name": "puppetlabs-stdlib", "version_requirement": ">= 4.0.0"}
+    ],
+    "operatingsystem_support": [
+	{"operatingsystem": "Debian", "operatingsystemrelease": ["8", "9"]}
 
+    ],
+}
