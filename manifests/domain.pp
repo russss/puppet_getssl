@@ -26,6 +26,8 @@
 #   [*use_single_acl*]
 #     Bool if true: only one acl directory must be specified.
 #     If false: for each subdomain on acl. Default true.
+#   [*domain_challenge_check_type*]
+#     Protocol to use for the challenge (http or https). Defaults to http.
 #   [*sub_domains*]
 #     Array with all subdomains for specified certificate. Defaults to empty Array.
 #   [*domain_private_key_alg*]
@@ -74,6 +76,7 @@ define getssl::domain (
   $domain                    = $name,
   $acl                       = $getssl::params::acl,
   $use_single_acl            = $getssl::params::use_single_acl,
+  $domain_challenge_check_type = $getssl::params::domain_challenge_check_type,
   $sub_domains               = $getssl::params::sub_domains,
   $domain_private_key_alg    = $getssl::params::domain_private_key_alg,
   $domain_account_key_length = $getssl::params::domain_account_key_length,
@@ -96,6 +99,10 @@ define getssl::domain (
   validate_integer($domain_account_key_length)
   validate_integer($domain_renew_allow)
   validate_bool($domain_check_remote, $use_single_acl)
+
+  if $domain_challenge_check_type {
+    validate_string($domain_challenge_check_type)
+  }
 
   if $ca_cert_location {
     validate_string($ca_cert_location)
@@ -192,7 +199,8 @@ define getssl::domain (
       'domain_renew_allow'        => $domain_renew_allow,
       'domain_server_type'        => $domain_server_type,
       'sub_domains'               => $sub_domains,
-      'use_single_acl'            => $use_single_acl
+      'use_single_acl'            => $use_single_acl,
+      'domain_challenge_check_type' => $domain_challenge_check_type
     }),
     notify  => $config_notifiers,
   }

@@ -26,6 +26,10 @@ ACL=(<% $acl.each |$value| { %>'<%= $value %>'<% } %>)
 #Enable use of a single ACL for all checks
 USE_SINGLE_ACL=<%= $use_single_acl -%>
 
+<% if $domain_challenge_check_type { -%>
+CHALLENGE_CHECK_TYPE="<%= $domain_challenge_check_type -%>"
+<% } -%>
+
 # Location for all your certs, these can either be on the server (full path name)
 # or using ssh /sftp as for the ACL
 <% if $domain_cert_location { -%>

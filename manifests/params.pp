@@ -27,6 +27,7 @@ class getssl::params{
   $domain                    = undef
   $acl                       = []
   $use_single_acl            = true
+  $domain_challenge_check_type = undef
   $sub_domains               = []
   $domain_private_key_alg    = 'rsa'
   $domain_account_key_length = 4096
