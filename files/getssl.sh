@@ -173,7 +173,7 @@
 # 2016-12-28 tidied up upgrade tmpfile handling (1.95)
 # 2017-01-01 update comments
 # 2017-01-01 create stable release 2.0 (2.00)
-# 2017-01-02 Added option to limit amount of old versions to keep (2.01)
+# 2017-01-02 Added option to limit number of old versions to keep (2.01)
 # 2017-01-03 Created check_config function to list all obvious config issues (2.02)
 # 2017-01-10 force renew if FORCE_RENEWAL file exists (2.03)
 # 2017-01-12 added drill, dig or host as alternatives to nslookup (2.04)
@@ -185,10 +185,12 @@
 # 2017-01-30 issue #243 additional compatibility with bash 3.0 (2.09)
 # 2017-02-18 add OCSP Must-Staple to the domain csr generation (2.10)
 # 2019-09-30 issue #423 Use HTTP 1.1 as workaround atm (2.11)
+# 2019-10-02 issue #425 Case insensitive processing of agreement url because of HTTP/2 (2.12)
+# 2019-10-07 update DNS checks to allow use of CNAMEs (2.13)
 # ----------------------------------------------------------------------------------------
 
 PROGNAME=${0##*/}
-VERSION="2.11"
+VERSION="2.13"
 
 # defaults
 ACCOUNT_KEY_LENGTH=4096
@@ -464,7 +466,7 @@ check_getssl_upgrade() { # check if a more recent version of code is available a
         shopt -s -o noglob
         IFS=$'\n' getssl_versions=($(sort <<< "${getssl_versions[*]}"))
         shopt -u -o noglob
-        # Remove entries until given amount of old versions to keep is reached
+        # Remove entries until given number of old versions to keep is reached
         while [[ ${#getssl_versions[@]} -gt $_KEEP_VERSIONS ]]; do
           debug "removing old version ${getssl_versions[0]}"
           rm "${getssl_versions[0]}"
@@ -938,15 +940,15 @@ help_message() { # print out the help message
 
 	Options:
 	  -a, --all          Check all certificates
-	  -d, --debug        Outputs debug information
+	  -d, --debug        Output debug information
 	  -c, --create       Create default config files
 	  -f, --force        Force renewal of cert (overrides expiry checks)
 	  -h, --help         Display this help message and exit
 	  -q, --quiet        Quiet mode (only outputs on error, success of new cert, or getssl was upgraded)
-	  -Q, --mute         Like -q, but mutes notification about successful upgrade
+	  -Q, --mute         Like -q, but also mute notification about successful upgrade
 	  -r, --revoke   "cert" "key" [CA_server] Revoke a certificate (the cert and key are required)
 	  -u, --upgrade      Upgrade getssl if a more recent version is available
-	  -k, --keep     "#" Maximum amount of old getssl versions to keep when upgrading
+	  -k, --keep     "#" Maximum number of old getssl versions to keep when upgrading
 	  -U, --nocheck      Do not check if a more recent version is available
 	  -w working_dir "Working directory"
 
@@ -1483,7 +1485,7 @@ if [[ $_REVOKE -eq 1 ]]; then
 fi
 
 # get latest agreement from CA (as default)
-AGREEMENT=$(curl -I "${CA}/terms" 2>/dev/null | awk '$1 ~ "Location:" {print $2}'|tr -d '\r')
+AGREEMENT=$(curl -I "${CA}/terms" 2>/dev/null | awk 'tolower($1) ~ "location:" {print $2}'|tr -d '\r')
 
 # if nothing in command line, print help and exit.
 if [[ -z "$DOMAIN" ]] && [[ ${_CHECK_ALL} -ne 1 ]]; then
@@ -1989,13 +1991,13 @@ if [[ $VALIDATE_VIA_DNS == "true" ]]; then
                            | grep '"'|awk -F'"' '{ print $2}')
           elif [[ "$DNS_CHECK_FUNC" == "drill" ]] || [[ "$DNS_CHECK_FUNC" == "dig" ]]; then
             check_result=$($DNS_CHECK_FUNC TXT "_acme-challenge.${d}" "@${ns}" \
-                           | grep ^_acme|awk -F'"' '{ print $2}')
+                           | grep '300 IN TXT'|awk -F'"' '{ print $2}')
           elif [[ "$DNS_CHECK_FUNC" == "host" ]]; then
             check_result=$($DNS_CHECK_FUNC -t TXT "_acme-challenge.${d}" "${ns}" \
-                           | grep ^_acme|awk -F'"' '{ print $2}')
+                           | grep 'descriptive text'|awk -F'"' '{ print $2}')
           else
             check_result=$(nslookup -type=txt "_acme-challenge.${d}" "${ns}" \
-                           | grep ^_acme|awk -F'"' '{ print $2}')
+                           | grep 'text ='|awk -F'"' '{ print $2}')
           fi
           debug "expecting  $auth_key"
           debug "${ns} gave ... $check_result"
