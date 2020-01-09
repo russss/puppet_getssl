@@ -6,8 +6,8 @@ class getssl::params{
   # Main parts
   $base_dir                  = '/opt/getssl'
   $production                = false
-  $prod_ca                   = 'https://acme-v01.api.letsencrypt.org'
-  $staging_ca                = 'https://acme-staging.api.letsencrypt.org'
+  $prod_ca                   = 'https://acme-v02.api.letsencrypt.org/directory'
+  $staging_ca                = 'https://acme-staging-v02.api.letsencrypt.org/directory'
   $manage_packages           = false
   $packages                  = ['curl']
   $manage_cron               = true
