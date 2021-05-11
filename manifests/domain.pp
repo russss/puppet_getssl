@@ -159,12 +159,14 @@ define getssl::domain (
     validate_string($domain_account_mail)
   }
 
-  file { "${base_dir}/conf/${domain}":
+  $parent_dir = {
     ensure => directory,
     owner  => root,
     group  => root,
-    mode   => '0644',
+    mode   => '0755',
   }
+
+  ensure_resource('file', "${base_dir}/conf/${domain}", $parent_dir)
 
   if $suppress_getssl_run {
     # Don't run getssl immediately
