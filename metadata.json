@@ -1,8 +1,8 @@
 {
     "name": "davidc/getssl",
-    "version": "0.0.6-unreleased",
+    "version": "1.0.0",
     "author": "Daniel Thielking, David Croft",
-    "summary": "Automates Let's Encrypt certificates using getssl from srvrco",
+    "summary": "Automates Let's Encrypt certificates using the getssl script",
     "license": "Apache-2.0",
     "source": "https://github.com/davidc/puppet_getssl",
     "project_page": "https://github.com/davidc/puppet_getssl",
@@ -12,7 +12,7 @@
 	{"name": "puppetlabs-stdlib", "version_requirement": ">= 4.0.0"}
     ],
     "operatingsystem_support": [
-	{"operatingsystem": "Debian", "operatingsystemrelease": ["8", "9"]}
+	{"operatingsystem": "Debian", "operatingsystemrelease": ["8", "9", "10"]}
 
     ]
 }
