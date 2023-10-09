@@ -70,19 +70,19 @@
 #
 define getssl::domain (
   String            $base_dir                  = $getssl::base_dir,
-  Bool              $production                = $getssl::params::production,
+  Boolean           $production                = $getssl::params::production,
   String            $prod_ca                   = $getssl::params::prod_ca,
   String            $staging_ca                = $getssl::params::staging_ca,
   String            $domain                    = $name,
   Array[String]     $acl                       = $getssl::params::acl,
-  Bool              $use_single_acl            = $getssl::params::use_single_acl,
-  String            $domain_challenge_check_type = $getssl::params::domain_challenge_check_type,
+  Boolean           $use_single_acl            = $getssl::params::use_single_acl,
+  Optional[String]  $domain_challenge_check_type = $getssl::params::domain_challenge_check_type,
   Array[String]     $sub_domains               = $getssl::params::sub_domains,
   String            $domain_private_key_alg    = $getssl::params::domain_private_key_alg,
   Integer           $domain_account_key_length = $getssl::params::domain_account_key_length,
   Optional[String]  $domain_account_mail       = $getssl::params::domain_account_mail,
-  Bool              $domain_check_remote       = $getssl::params::domain_check_remote,
-  Integer           $domain_check_remote_wait  = $getssl::params::domain_check_remote_wait,
+  Boolean           $domain_check_remote       = $getssl::params::domain_check_remote,
+  Optional[Integer] $domain_check_remote_wait  = $getssl::params::domain_check_remote_wait,
   Optional[String]  $domain_reload_command     = $getssl::params::domain_reload_command,
   Integer           $domain_renew_allow        = $getssl::params::domain_renew_allow,
   String            $domain_server_type        = $getssl::params::domain_server_type,
@@ -92,7 +92,7 @@ define getssl::domain (
   Optional[String]  $domain_key_cert_location  = $getssl::params::domain_key_cert_location,
   Optional[String]  $domain_key_location       = $getssl::params::domain_key_location,
   Optional[String]  $domain_pem_location       = $getssl::params::domain_pem_location,
-  Bool              $suppress_getssl_run       = $getssl::params::suppress_getssl_run,
+  Boolean           $suppress_getssl_run       = $getssl::params::suppress_getssl_run,
 ) {
   # Use production api of letsencrypt only if $production is true
   if $production {

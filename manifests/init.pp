@@ -61,20 +61,20 @@
 # Author Name <github@thielking-vonessen.de>
 class getssl (
   String            $base_dir            = $getssl::params::base_dir,
-  Bool              $production         = $getssl::params::production,
+  Boolean           $production         = $getssl::params::production,
   String            $prod_ca            = $getssl::params::prod_ca,
   String            $staging_ca         = $getssl::params::staging_ca,
-  Bool              $manage_packages    = $getssl::params::manage_packages,
+  Boolean           $manage_packages    = $getssl::params::manage_packages,
   Array[String]     $packages           = $getssl::params::packages,
-  Bool              $manage_cron        = $getssl::params::manage_cron,
+  Boolean           $manage_cron        = $getssl::params::manage_cron,
   Optional[String]  $account_mail       = $getssl::params::account_mail,
   Integer           $account_key_length = $getssl::params::account_key_length,
   String            $private_key_alg    = $getssl::params::private_key_alg,
   String            $reload_command     = $getssl::params::reload_command,
-  Bool              $reuse_private_key  = $getssl::params::reuse_private_key,
+  Boolean           $reuse_private_key  = $getssl::params::reuse_private_key,
   Integer           $renew_allow        = $getssl::params::renew_allow,
   String            $server_type        = $getssl::params::server_type,
-  Bool              $check_remote       = $getssl::params::check_remote,
+  Boolean           $check_remote       = $getssl::params::check_remote,
   String            $ssl_conf           = $getssl::params::ssl_conf,
 ) inherits getssl::params {
   # Use production api of letsencrypt if $production is true
