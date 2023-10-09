@@ -2,7 +2,7 @@
 #
 #   This class sets all the sufficient default settings
 #
-class getssl::params{
+class getssl::params {
   # Main parts
   $base_dir                  = '/opt/getssl'
   $production                = false

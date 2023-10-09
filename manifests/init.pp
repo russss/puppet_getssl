@@ -26,7 +26,7 @@
 #     Global Email Address for Letsencrypt registration
 #   [*account_key_length*]
 #     Account key length. Default 4096
-#   [*account_key_alg*]
+#   [*private_key_alg*]
 #     Account key algorythm. Default rsa
 #   [*reload_command*]
 #     Specifies reload for services. E.g systemctl restart apach2. Default undef
@@ -59,42 +59,29 @@
 # -------
 #
 # Author Name <github@thielking-vonessen.de>
-
 class getssl (
-  $base_dir           = $getssl::params::base_dir,
-  $production         = $getssl::params::production,
-  $prod_ca            = $getssl::params::prod_ca,
-  $staging_ca         = $getssl::params::staging_ca,
-  $manage_packages    = $getssl::params::manage_packages,
-  $packages           = $getssl::params::packages,
-  $manage_cron        = $getssl::params::manage_cron,
-  $account_mail       = $getssl::params::account_mail,
-  $account_key_length = $getssl::params::account_key_length,
-  $private_key_alg    = $getssl::params::private_key_alg,
-  $reload_command     = $getssl::params::reload_command,
-  $reuse_private_key  = $getssl::params::reuse_private_key,
-  $renew_allow        = $getssl::params::renew_allow,
-  $server_type        = $getssl::params::server_type,
-  $check_remote       = $getssl::params::check_remote,
-  $ssl_conf           = $getssl::params::ssl_conf,
+  String            $base_dir            = $getssl::params::base_dir,
+  Bool              $production         = $getssl::params::production,
+  String            $prod_ca            = $getssl::params::prod_ca,
+  String            $staging_ca         = $getssl::params::staging_ca,
+  Bool              $manage_packages    = $getssl::params::manage_packages,
+  Array[String]     $packages           = $getssl::params::packages,
+  Bool              $manage_cron        = $getssl::params::manage_cron,
+  Optional[String]  $account_mail       = $getssl::params::account_mail,
+  Integer           $account_key_length = $getssl::params::account_key_length,
+  String            $private_key_alg    = $getssl::params::private_key_alg,
+  String            $reload_command     = $getssl::params::reload_command,
+  Bool              $reuse_private_key  = $getssl::params::reuse_private_key,
+  Integer           $renew_allow        = $getssl::params::renew_allow,
+  String            $server_type        = $getssl::params::server_type,
+  Bool              $check_remote       = $getssl::params::check_remote,
+  String            $ssl_conf           = $getssl::params::ssl_conf,
 ) inherits getssl::params {
-
-  # Check all variables
-  validate_string($base_dir, $ssl_conf, $server_type, $reload_command)
-  validate_bool($manage_packages, $production, $reuse_private_key, $check_remote)
-  validate_array($packages)
-  validate_integer($account_key_length)
-  validate_integer($renew_allow)
-
   # Use production api of letsencrypt if $production is true
   if $production {
     $ca = $prod_ca
   } else {
     $ca = $staging_ca
-  }
-
-  if $account_mail {
-    validate_string($account_mail)
   }
 
   # Install packages if $manage_packages is true
@@ -132,17 +119,17 @@ class getssl (
     group   => root,
     mode    => '0644',
     content => epp('getssl/global_getssl.cfg.epp', {
-      'ca'                 => $ca,
-      'account_mail'       => $account_mail,
-      'account_key_length' => $account_key_length,
-      'base_dir'           => $base_dir,
-      'private_key_alg'    => $private_key_alg,
-      'reuse_private_key'  => $reuse_private_key,
-      'reload_command'     => $reload_command,
-      'renew_allow'        => $renew_allow,
-      'server_type'        => $server_type,
-      'check_remote'       => $check_remote,
-      'ssl_conf'           => $ssl_conf,
+        'ca'                 => $ca,
+        'account_mail'       => $account_mail,
+        'account_key_length' => $account_key_length,
+        'base_dir'           => $base_dir,
+        'private_key_alg'    => $private_key_alg,
+        'reuse_private_key'  => $reuse_private_key,
+        'reload_command'     => $reload_command,
+        'renew_allow'        => $renew_allow,
+        'server_type'        => $server_type,
+        'check_remote'       => $check_remote,
+        'ssl_conf'           => $ssl_conf,
     }),
   }
 
